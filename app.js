@@ -32,13 +32,13 @@ async function digit(d){
   const hash=[...new Uint8Array(bytes)].map(b=>b.toString(16).padStart(2,'0')).join('');
   if(checkEpoch!==epoch||document.hidden)return;
   if(hash===GAME_PIN_HASH){unlocked=true;$('lock-screen').hidden=true;$('arcade').hidden=false;$('library').hidden=false;window.scrollTo(0,0);}
-  else if(hash===SECOND_PIN_HASH){window.location.href='https://www.instagram.com';}
+  else if(hash===INSTAGRAM_PIN_HASH){window.location.href='https://www.instagram.com';}
   else{$('pin-message').textContent='That code didn't match. Try again.';$('keypad').classList.remove('error');void $('keypad').offsetWidth;$('keypad').classList.add('error');}
  }catch{$('pin-message').textContent='Open this site using HTTPS to unlock.';}
  finally{if(checkEpoch===epoch){checking=false;drawDots();}}
 }
 const GAME_PIN_HASH='9589262630f775d921bef5b9b2d36fa40f91afebeab887deefc721ff3c787b2c';
-const SECOND_PIN_HASH='5c5f71c6dd7c77c0597c5b05087aa4f5b4df6e59c13dd2f3b42e3a6e2a3e2a49';
+const INSTAGRAM_PIN_HASH='5c5f71c6dd7c77c0597c5b05087aa4f5b4df6e59c13dd2f3b42e3a6e2a3e2a49';
 $('keypad').addEventListener('click',e=>{const b=e.target.closest('[data-digit]');if(b)digit(b.dataset.digit);});
 $('clear-pin').onclick=()=>{if(!checking){pin='';drawDots();}};
 $('delete-pin').onclick=()=>{if(!checking){pin=pin.slice(0,-1);drawDots();}};
