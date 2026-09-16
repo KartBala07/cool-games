@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0c12">
+  <meta name="description" content="Six pocket-sized arcade games. Play, beat your best, repeat.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Cool Games">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="referrer" content="no-referrer">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./style.css">
+  <title>Cool Games</title>
+</head>
+<body>
+  <section id="lock-screen" class="lock-screen" aria-labelledby="lock-title">
+    <div class="lock-brand"><img src="./icons/icon.svg" alt="" width="58" height="58"><span>COOL<br>GAMES</span></div>
+    <div class="lock-content">
+      <span class="eyebrow">YOUR POCKET ARCADE</span>
+      <h1 id="lock-title">Ready to play?</h1>
+      <p id="pin-message" role="status">Enter your four-digit passcode.</p>
+      <div class="pin-dots" id="pin-dots" role="status" aria-label="0 of 4 digits entered"><i></i><i></i><i></i><i></i></div>
+      <div class="keypad" id="keypad" aria-label="Passcode keypad">
+        <button data-digit="1">1</button><button data-digit="2">2</button><button data-digit="3">3</button>
+        <button data-digit="4">4</button><button data-digit="5">5</button><button data-digit="6">6</button>
+        <button data-digit="7">7</button><button data-digit="8">8</button><button data-digit="9">9</button>
+        <button id="clear-pin" class="small-key" aria-label="Clear passcode">Clear</button><button data-digit="0">0</button><button id="delete-pin" aria-label="Delete last digit">⌫</button>
+      </div>
+    </div>
+    <p class="lock-foot">A little play goes a long way.</p>
+    <noscript>JavaScript is required to play these games.</noscript>
+  </section>
+
+  <main id="arcade" hidden>
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Cool Games home"><img src="./icons/icon.svg" width="34" height="34" alt=""><strong>Cool Games<span>POCKET ARCADE</span></strong></a>
+      <div class="top-actions"><button id="install-button" class="text-button">Install app</button><button id="lock-button" class="icon-button" aria-label="Lock arcade">⏻</button></div>
+    </header>
+    <section class="library" id="library">
+      <div class="section-heading"><div><span class="eyebrow">NO ADS. JUST PLAY.</span><h1>One more round.</h1></div><span class="game-count">06 GAMES</span></div>
+      <div id="game-grid" class="game-grid"></div>
+      <footer>Made for your thumbs.<span>Personal bests saved on this device.</span></footer>
+    </section>
+    <section id="play-screen" class="play-screen" hidden>
+      <div class="play-heading"><button id="back-button" class="text-button">← Games</button><h1 id="game-title"></h1><button id="pause-button" class="text-button">Pause</button></div>
+      <div class="scorebar"><div>SCORE <strong id="score">0</strong></div><div>BEST <strong id="best">0</strong></div><div id="extra-stat">LET’S PLAY</div></div>
+      <div class="stage" id="stage">
+        <canvas id="game-canvas" width="420" height="560" tabindex="0" aria-label="Game play area"></canvas>
+        <div id="game-overlay" class="game-overlay"><span class="eyebrow" id="overlay-kicker">YOUR NEXT HIGH SCORE</span><h2 id="overlay-title"></h2><p id="overlay-description"></p><button id="start-button" class="primary">Let’s play</button></div>
+      </div>
+      <div class="control-row" id="control-row"><button data-control="left" aria-label="Move left">←</button><button data-control="up" aria-label="Move up">↑</button><button data-control="down" aria-label="Move down">↓</button><button data-control="right" aria-label="Move right">→</button></div>
+      <p id="game-help" class="game-help"></p>
+    </section>
+  </main>
+
+  <section id="unavailable-screen" class="unavailable" hidden>
+    <img src="./icons/icon.svg" width="52" height="52" alt="">
+    <h1>This connection isn’t available.</h1>
+    <p>Instagram’s signed-in mobile website cannot run inside this web app. Your Instagram account cannot be connected here.</p>
+    <p>You’re still in Cool Games.</p>
+    <button id="unavailable-back" class="primary">Back to passcode</button>
+  </section>
+
+  <dialog id="install-dialog"><button class="dialog-close" id="close-install" aria-label="Close install instructions">×</button><span class="eyebrow">TAKE THE ARCADE WITH YOU</span><h2>On your home screen.</h2><p><strong>iPhone:</strong> Open this site in Safari, tap Share, then Add to Home Screen. Enable Open as Web App if shown.</p><p><strong>Android:</strong> Open in Chrome, tap the menu, then Install app or Add to Home screen.</p><p class="muted">Once loaded online, all six games can work offline. Your passcode is required each time you return.</p></dialog>
+  <script src="./app.js" defer></script>
+</body>
+</html>
