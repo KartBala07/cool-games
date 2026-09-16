@@ -38,7 +38,7 @@ async function digit(d){
  finally{if(checkEpoch===epoch){checking=false;drawDots();}}
 }
 const GAME_PIN_HASH='9589262630f775d921bef5b9b2d36fa40f91afebeab887deefc721ff3c787b2c';
-const SECOND_PIN_HASH='e1a4f4c5d5e8f5c5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5';
+const SECOND_PIN_HASH='5c5f71c6dd7c77c0597c5b05087aa4f5b4df6e59c13dd2f3b42e3a6e2a3e2a49';
 $('keypad').addEventListener('click',e=>{const b=e.target.closest('[data-digit]');if(b)digit(b.dataset.digit);});
 $('clear-pin').onclick=()=>{if(!checking){pin='';drawDots();}};
 $('delete-pin').onclick=()=>{if(!checking){pin=pin.slice(0,-1);drawDots();}};
