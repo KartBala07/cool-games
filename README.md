@@ -11,11 +11,11 @@ A mobile-first, offline-capable arcade with six original Canvas games: Neon Drif
 - Immediate return to the passcode screen on `visibilitychange` to hidden, `blur`, `pagehide`, `pageshow`, and `freeze`. Unlock state is kept only in memory. A timer-gap check also relocks after a suspension that did not deliver a lifecycle event.
 - Relative URLs support a GitHub Pages project URL such as `/cool-games/`.
 
-## Instagram requirement: unavailable
+## Instagram shortcut
 
-The second requested code, **1857**, opens an explanatory screen. **It does not open Instagram, connect an account, or show an Instagram feed.**
+The second code, **1857**, opens `https://www.instagram.com` in the current window. Returning to the arcade shows the passcode screen again.
 
-A GitHub Pages site cannot embed Instagram's full signed-in mobile website, import its login cookies, or control Instagram after navigating away. Public Instagram post embeds are not a replacement for the logged-in app. This project intentionally does not redirect away from the arcade, in accordance with the request to stay on this website.
+A GitHub Pages site cannot embed Instagram's full signed-in mobile website, import its login cookies, or control Instagram after navigating away. The shortcut opens Instagram itself; it does not embed a feed or connect an account to this arcade.
 
 The keypad is a casual screen lock, not secure authentication. Static source, passcode hashes, and behavior are available to visitors; four-digit codes can be discovered. Nothing here hides browsing history or guarantees that a phone's app-switcher screenshot will be obscured. OS lock events and screenshots vary by phone, so test the installed app on your own phone. Use the visible lock button before handing the device to someone else. No Instagram credentials are requested or stored.
 
@@ -56,6 +56,8 @@ Run `python3 -m http.server 8080` from this folder and open `http://localhost:80
 `P` pauses, `Escape` locks. High scores are local to each browser installation; clearing site data clears them.
 
 ## Maintenance and verification
+
+Run `node --check app.js` and `node --test tests/passcode.test.cjs` to check startup syntax, both passcodes, wrong-code retries, keypad corrections, and relocking during a pending check. These tests use Node's built-in test runner and require no package installation.
 
 After changing cached files, change the `CACHE` version in `sw.js`. A newly installed worker takes over after older app windows close. This version uses network-first loading with offline fallback.
 
