@@ -9,6 +9,11 @@
   <meta name="apple-mobile-web-app-title" content="Cool Games">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="referrer" content="no-referrer">
+  <link rel="preconnect" href="https://www.instagram.com">
+  <link rel="preconnect" href="https://en.m.wikipedia.org">
+  <link rel="preconnect" href="https://www.youtube.com">
+  <link rel="dns-prefetch" href="https://www.instagram.com">
+  <link rel="dns-prefetch" href="https://en.m.wikipedia.org">
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link rel="manifest" href="./manifest.webmanifest">
@@ -58,35 +63,57 @@
 
   <section id="web-screen" class="web-screen" aria-labelledby="web-title" hidden>
     <header class="web-bar">
-      <button id="web-back" class="text-button">← Passcode</button>
-      <form id="web-form" class="web-form">
-        <input id="web-address" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Web address or search" placeholder="Address or search">
+      <button id="web-back" class="text-button web-passcode" aria-label="Back to passcode">← Passcode</button>
+      <form id="web-form" class="web-form" role="search">
+        <span class="web-lock" aria-hidden="true">🔒</span>
+        <input id="web-address" list="web-suggestions" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Web address or search" placeholder="Search or type a website">
+        <datalist id="web-suggestions"></datalist>
         <button type="submit" class="primary web-go">Go</button>
       </form>
       <div class="web-tools">
-        <button id="web-reload" class="icon-button" aria-label="Reload page">⟳</button>
-        <button id="web-open-tab" class="icon-button" aria-label="Open in a new tab" data-web-open>↗</button>
+        <button id="web-star" class="icon-button" type="button" aria-label="Bookmark this page">☆</button>
+        <button id="web-reload" class="icon-button" type="button" aria-label="Reload page">⟳</button>
+        <button id="web-open-tab" class="icon-button" type="button" aria-label="Open in a new tab" data-web-open>↗</button>
       </div>
     </header>
     <div class="web-nav">
-      <button id="web-back-page" class="text-button">◀ Back</button>
-      <button id="web-forward-page" class="text-button">Forward ▶</button>
-      <button id="web-home" class="text-button">⌂ Start</button>
+      <button id="web-back-page" class="text-button" type="button" aria-label="Back">◀</button>
+      <button id="web-forward-page" class="text-button" type="button" aria-label="Forward">▶</button>
+      <button id="web-start" class="text-button" type="button">⌂ Start</button>
+      <span class="web-badge">BROWSER MODE</span>
     </div>
-    <p class="web-hint">Many sites (Instagram, Google, YouTube) refuse to load inside another site. If the area below stays blank or shows an error, tap <strong>↗</strong> to open it in a new tab.</p>
     <div class="web-stage">
       <iframe id="web-frame" class="web-frame" title="Web viewer" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-downloads" hidden></iframe>
       <p id="web-loading" class="web-loading" hidden>Loading…</p>
-      <div id="web-fallback" class="web-fallback">
-        <span class="eyebrow">IN-APP WEB VIEWER</span>
+      <div id="web-notice" class="web-notice" hidden>
+        <span id="web-notice-text"></span>
+        <button class="text-button" type="button" data-web-open>Open ↗</button>
+        <button id="web-notice-close" class="web-delete" type="button" aria-label="Dismiss">✕</button>
+      </div>
+      <div id="web-blocked" class="web-blocked" hidden>
+        <span class="eyebrow">CAN'T EMBED THIS SITE</span>
+        <h2 id="web-blocked-host"></h2>
+        <p id="web-blocked-text"></p>
+        <button class="primary" type="button" data-web-open>Open in a new tab</button>
+      </div>
+      <div id="web-start-page" class="web-start-page">
         <h1 id="web-title">Browse without leaving.</h1>
-        <p id="web-url" class="web-url"></p>
-        <p class="web-note">Type an address above, or search. Pages that allow embedding appear here; the rest open in a new tab.</p>
-        <button class="primary" data-web-open>Open in a new tab</button>
-        <div class="web-links">
-          <button data-web-url="https://www.instagram.com">Instagram</button>
-          <button data-web-url="https://en.m.wikipedia.org">Wikipedia</button>
-          <button data-web-url="https://example.com">Example.com</button>
+        <p class="web-note">Type an address or search above. Sites that allow embedding load right here; sites that block embedding (like Instagram) open with one tap.</p>
+        <div class="web-tiles">
+          <button type="button" data-web-url="https://www.instagram.com"><strong>Instagram</strong><span>instagram.com</span></button>
+          <button type="button" data-web-url="https://en.m.wikipedia.org"><strong>Wikipedia</strong><span>en.m.wikipedia.org</span></button>
+          <button type="button" data-web-url="https://www.youtube.com"><strong>YouTube</strong><span>youtube.com</span></button>
+          <button type="button" data-web-url="https://www.google.com"><strong>Google</strong><span>google.com</span></button>
+          <button type="button" data-web-url="https://x.com"><strong>X</strong><span>x.com</span></button>
+          <button type="button" data-web-url="https://example.com"><strong>Example.com</strong><span>example.com</span></button>
+        </div>
+        <div id="web-bookmarks-wrap" class="web-section" hidden>
+          <div class="web-section-head"><h2>Bookmarks</h2></div>
+          <ul id="web-bookmark-list" class="web-list"></ul>
+        </div>
+        <div id="web-history-wrap" class="web-section" hidden>
+          <div class="web-section-head"><h2>History</h2><button id="web-clear-history" class="text-button" type="button">Clear all</button></div>
+          <ul id="web-history-list" class="web-list"></ul>
         </div>
       </div>
     </div>

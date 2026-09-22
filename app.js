@@ -3,7 +3,7 @@ const $ = id => document.getElementById(id);
 const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const random = (a,b) => a+Math.random()*(b-a);
 const W=420,H=560;
-let unlocked=false,pin='',checking=false,epoch=0,game=null,selected=null,playing=false,paused=false,frame=0,lastFrame=0,webTimer=0,webHistory=[],webIndex=-1;
+let unlocked=false,pin='',checking=false,epoch=0,game=null,selected=null,playing=false,paused=false,frame=0,lastFrame=0,webTimer=0,webStack=[],webIndex=-1;
 const held=new Set();
 const catalog=[
  {id:'drift',title:'Neon Drift',tag:'RACE • SURVIVE',accent:'#c8fb63',help:'Drag to steer, or use ← →. Dodge traffic and collect the glowing rings.',controls:['left','right']},
@@ -19,7 +19,7 @@ function setScore(){if(!game||!selected)return;$('score').textContent=Math.floor
 function drawDots(){[...$('pin-dots').children].forEach((dot,i)=>dot.classList.toggle('filled',i<pin.length));$('pin-dots').setAttribute('aria-label',`${pin.length} of 4 digits entered`);}
 function lock(){
   epoch++;unlocked=false;pin='';checking=false;playing=false;paused=false;held.clear();pointerStart=null;cancelAnimationFrame(frame);saveBest();game=null;selected=null;
-  clearTimeout(webTimer);webHistory=[];webIndex=-1;const webFrame=$('web-frame');webFrame.onload=null;webFrame.src='about:blank';
+  clearTimeout(webTimer);webStack=[];webIndex=-1;const webFrame=$('web-frame');webFrame.onload=null;webFrame.src='about:blank';
   $('arcade').hidden=true;$('web-screen').hidden=true;$('lock-screen').hidden=false;
   $('play-screen').hidden=true;$('library').hidden=false;$('pin-message').textContent='Enter your four-digit passcode.';
   $('keypad').classList.remove('error');$('install-dialog').close();drawDots();
@@ -40,27 +40,52 @@ async function digit(d){
 }
 const GAME_PIN_HASH='9589262630f775d921bef5b9b2d36fa40f91afebeab887deefc721ff3c787b2c';
 const WEB_PIN_HASH='255afccc8af662895c98741bca9fb9213750b070d1c945061edf6bb6270b6a74';
+const WEB_HISTORY_KEY='cool-games-web-history',WEB_BOOKMARK_KEY='cool-games-web-bookmarks';
+const WEB_BLOCKERS=['instagram.com','facebook.com','google.com','youtube.com','x.com','twitter.com','tiktok.com','reddit.com','linkedin.com','discord.com','whatsapp.com','duckduckgo.com','bing.com','yahoo.com'];
 function toWebUrl(value){const raw=String(value||'').trim();if(!raw)return '';if(/^https?:\/\//i.test(raw))return raw;if(/^[\w-]+(\.[\w-]+)+(:\d+)?(\/\S*)?$/.test(raw))return 'https://'+raw;return 'https://duckduckgo.com/?q='+encodeURIComponent(raw);}
-function showWebFallback(url){clearTimeout(webTimer);const f=$('web-frame');f.hidden=true;f.onload=null;$('web-loading').hidden=true;$('web-url').textContent=url||'';$('web-fallback').hidden=false;}
-function updateWebButtons(){$('web-back-page').disabled=webIndex<=0;$('web-forward-page').disabled=webIndex>=webHistory.length-1;}
+function webHost(url){try{return new URL(url).hostname.replace(/^www\./,'');}catch{return String(url||'');}}
+function webRead(key,fallback){try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):fallback;}catch{return fallback;}}
+function webWrite(key,value){try{localStorage.setItem(key,JSON.stringify(value));}catch{}}
+function webClear(node){if(node.replaceChildren)node.replaceChildren();else node.textContent='';}
+function webIsBlocked(url){const host=webHost(url).toLowerCase();return WEB_BLOCKERS.some(b=>host===b||host.endsWith('.'+b));}
+function webAgo(ts){const s=Math.max(1,Math.floor((Date.now()-(ts||Date.now()))/1000));if(s<60)return s+'s ago';const m=Math.floor(s/60);if(m<60)return m+'m ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';}
+function webRemember(url){const list=webRead(WEB_HISTORY_KEY,[]).filter(entry=>entry.url!==url);list.unshift({url,host:webHost(url),ts:Date.now()});webWrite(WEB_HISTORY_KEY,list.slice(0,300));}
+function webDelete(url){webWrite(WEB_HISTORY_KEY,webRead(WEB_HISTORY_KEY,[]).filter(entry=>entry.url!==url));webRenderStart();}
+function webClearHistory(){webWrite(WEB_HISTORY_KEY,[]);webRenderStart();}
+function webBookmarked(url){return webRead(WEB_BOOKMARK_KEY,[]).some(entry=>entry.url===url);}
+function webToggleBookmark(){const url=$('web-address').value;if(!url)return;const list=webRead(WEB_BOOKMARK_KEY,[]);const next=webBookmarked(url)?list.filter(entry=>entry.url!==url):[{url,host:webHost(url),ts:Date.now()}].concat(list);webWrite(WEB_BOOKMARK_KEY,next.slice(0,120));webUpdateStar();webRenderStart();}
+function webUpdateStar(){const marked=webBookmarked($('web-address').value);$('web-star').textContent=marked?'★':'☆';$('web-star').setAttribute('aria-label',marked?'Remove bookmark':'Bookmark this page');}
+function webFillList(node,entries,emptyText,onRemove){webClear(node);if(!entries.length){const p=document.createElement('p');p.className='web-empty';p.textContent=emptyText;node.append(p);return;}for(const entry of entries){const li=document.createElement('li');const go=document.createElement('button');go.type='button';go.className='web-entry';const host=document.createElement('strong');host.textContent=entry.host||webHost(entry.url);const detail=document.createElement('span');detail.textContent=entry.url;const when=document.createElement('em');when.textContent=webAgo(entry.ts);go.append(host,detail,when);go.addEventListener('click',()=>openWeb(entry.url));const del=document.createElement('button');del.type='button';del.className='web-delete';del.setAttribute('aria-label','Delete '+entry.url);del.textContent='✕';del.addEventListener('click',event=>{event.stopPropagation();onRemove(entry.url);});li.append(go,del);node.append(li);}}
+function webRenderStart(){const history=webRead(WEB_HISTORY_KEY,[]);const bookmarks=webRead(WEB_BOOKMARK_KEY,[]);$('web-history-wrap').hidden=!history.length;$('web-bookmarks-wrap').hidden=!bookmarks.length;webFillList($('web-history-list'),history,'No sites visited yet.',webDelete);webFillList($('web-bookmark-list'),bookmarks,'No bookmarks yet.',url=>{webWrite(WEB_BOOKMARK_KEY,webRead(WEB_BOOKMARK_KEY,[]).filter(entry=>entry.url!==url));webUpdateStar();webRenderStart();});const suggestions=$('web-suggestions');webClear(suggestions);for(const entry of bookmarks.concat(history).slice(0,40)){const option=document.createElement('option');option.value=entry.url;suggestions.append(option);}}
+function showWebNotice(url){
+  if(webIsBlocked(url)){$('web-blocked-host').textContent=webHost(url)+' blocks embedding';$('web-blocked-text').textContent='This site refuses to load inside another site, so it can only open in a new tab. Your history and bookmarks stay here in Cool Games.';$('web-blocked').hidden=false;$('web-notice').hidden=true;}
+  else{$('web-notice-text').textContent='Still blank? '+webHost(url)+' may block embedding. Open it in a new tab.';$('web-notice').hidden=false;}
+}
+function updateWebButtons(){$('web-back-page').disabled=webIndex<=0;$('web-forward-page').disabled=webIndex>=webStack.length-1;}
 function openWeb(value,remember=true){
   const url=toWebUrl(value);if(!url)return;
-  if(remember){webHistory=webHistory.slice(0,webIndex+1);webHistory.push(url);webIndex=webHistory.length-1;}
-  $('web-address').value=url;$('web-fallback').hidden=true;$('web-loading').hidden=false;
-  const f=$('web-frame');f.hidden=false;clearTimeout(webTimer);
-  f.onload=()=>{clearTimeout(webTimer);$('web-loading').hidden=true;let blocked=false;try{const doc=f.contentDocument;if(doc&&String(doc.location.href||'').startsWith('about:'))blocked=true;}catch{blocked=false;}if(blocked)showWebFallback(url);};
-  webTimer=setTimeout(()=>showWebFallback(url),6000);
-  try{f.src=url;}catch{showWebFallback(url);}
-  updateWebButtons();
+  if(remember){webStack=webStack.slice(0,webIndex+1);webStack.push(url);webIndex=webStack.length-1;}
+  webRemember(url);
+  $('web-address').value=url;$('web-start-page').hidden=true;$('web-notice').hidden=true;$('web-blocked').hidden=true;$('web-loading').hidden=false;
+  const f=$('web-frame');clearTimeout(webTimer);f.onload=null;
+  if(webIsBlocked(url)){f.hidden=true;f.src='about:blank';$('web-loading').hidden=true;showWebNotice(url);}
+  else{
+    f.hidden=false;
+    f.onload=()=>{clearTimeout(webTimer);$('web-loading').hidden=true;};
+    webTimer=setTimeout(()=>{$('web-loading').hidden=true;if(!f.hidden)showWebNotice(url);},6000);
+    try{f.src=url;}catch{showWebNotice(url);}
+  }
+  webUpdateStar();updateWebButtons();webRenderStart();
 }
-function webGo(delta){const next=webIndex+delta;if(next<0||next>=webHistory.length)return;webIndex=next;openWeb(webHistory[webIndex],false);}
-function webHome(){clearTimeout(webTimer);const f=$('web-frame');f.onload=null;f.src='about:blank';f.hidden=true;$('web-address').value='';$('web-loading').hidden=true;showWebFallback('');webIndex=-1;webHistory=[];updateWebButtons();}
+function webGo(delta){const next=webIndex+delta;if(next<0||next>=webStack.length)return;webIndex=next;openWeb(webStack[webIndex],false);}
+function webStart(){clearTimeout(webTimer);const f=$('web-frame');f.onload=null;f.src='about:blank';f.hidden=true;$('web-loading').hidden=true;$('web-notice').hidden=true;$('web-blocked').hidden=true;$('web-start-page').hidden=false;$('web-address').value='';webStack=[];webIndex=-1;webUpdateStar();updateWebButtons();webRenderStart();}
 function webOpenTab(){const url=$('web-address').value||'';const open=window.open||function(){};if(url)open.call(window,url,'_blank','noopener,noreferrer');}
-$('web-form').addEventListener('submit',e=>{e.preventDefault();openWeb($('web-address').value);});
+$('web-form').addEventListener('submit',event=>{event.preventDefault();openWeb($('web-address').value);});
 $('web-back-page').onclick=()=>webGo(-1);$('web-forward-page').onclick=()=>webGo(1);
-$('web-home').onclick=webHome;$('web-reload').onclick=()=>openWeb($('web-address').value,false);
-document.querySelectorAll('[data-web-open]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();webOpenTab();}));
-document.querySelectorAll('[data-web-url]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();openWeb(b.dataset.webUrl);}));
+$('web-start').onclick=webStart;$('web-reload').onclick=()=>{if($('web-address').value)openWeb($('web-address').value,false);else webStart();};
+$('web-star').onclick=webToggleBookmark;$('web-clear-history').onclick=webClearHistory;$('web-notice-close').onclick=()=>{$('web-notice').hidden=true;};
+document.querySelectorAll('[data-web-open]').forEach(button=>button.addEventListener('click',event=>{event.preventDefault();webOpenTab();}));
+document.querySelectorAll('[data-web-url]').forEach(button=>button.addEventListener('click',event=>{event.preventDefault();openWeb(button.dataset.webUrl);}));
 $('keypad').addEventListener('click',e=>{const b=e.target.closest('[data-digit]');if(b)digit(b.dataset.digit);});
 $('clear-pin').onclick=()=>{if(!checking){pin='';drawDots();}};
 $('delete-pin').onclick=()=>{if(!checking){pin=pin.slice(0,-1);drawDots();}};

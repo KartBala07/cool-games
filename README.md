@@ -11,13 +11,22 @@ A mobile-first, offline-capable arcade with six original Canvas games: Neon Drif
 - Immediate return to the passcode screen on `visibilitychange` to hidden, `blur`, `pagehide`, `pageshow`, and `freeze`. Unlock state is kept only in memory. A timer-gap check also relocks after a suspension that did not deliver a lifecycle event.
 - Relative URLs support a GitHub Pages project URL such as `/cool-games/`.
 
-## In-app web viewer
+## In-app web browser
 
-The second code, **1857**, opens an in-site web viewer instead of leaving the arcade. It starts at `https://www.instagram.com`. The viewer has an address bar (type a domain like `wikipedia.org` or any text to search), back/forward history, reload, a start page with quick links, and an **↗** button that opens the current page in a real new tab. Anything you do in the viewer stays inside Cool Games; nothing is stored or sent anywhere by the app.
+The second code, **1857**, opens an in-site browser instead of leaving the arcade. It starts at `https://www.instagram.com` and has:
 
-Many sites — including Instagram, Google, YouTube, and Facebook — send `X-Frame-Options: DENY` or a `frame-ancestors` policy that browsers enforce, so they cannot be rendered inside another site. The viewer detects a blocked frame (or a six-second timeout) and shows a fallback with the address and an **Open in a new tab** button. Sites that permit embedding, such as Wikipedia, render directly in the pane. There is no way to bypass this from a static GitHub Pages site, and the app never asks for Instagram credentials.
+- An address bar with autocomplete from your history; type a domain like `wikipedia.org`, or any words to search.
+- Back and forward buttons, reload, and a **⌂ Start** page.
+- A start page with quick tiles (Instagram, Wikipedia, YouTube, Google, X, Example.com).
+- **History** of every site you open, saved on the device, with a per-row delete and **Clear all**.
+- **Bookmarks**: the ☆/★ button saves the current page; bookmarks appear on the start page and can be removed.
+- An **↗** button that opens the current page in a real new tab.
 
-The keypad is a casual screen lock, not secure authentication. Static source, passcode hashes, and behavior are available to visitors; four-digit codes can be discovered. Nothing here hides browsing history or guarantees that a phone's app-switcher screenshot will be obscured. The in-app viewer does not hide activity from the device's own browser history. OS lock events and screenshots vary by phone, so test the installed app on your own phone. Use the visible lock button before handing the device to someone else. The web viewer locks and clears its frame whenever the arcade relocks.
+History and bookmarks are kept in `localStorage` only (`cool-games-web-history`, `cool-games-web-bookmarks`); nothing is sent anywhere. The frame is cleared on relock.
+
+Some hosts — Instagram, Facebook, Google, YouTube, X, TikTok, Reddit, LinkedIn, Discord, WhatsApp — send `X-Frame-Options: DENY` or `frame-ancestors`, so browsers refuse to render them inside another site. For those the viewer skips the embed and shows a clean in-app notice with an **Open ↗** button, avoiding the browser's raw “refused to connect” page. Sites that permit embedding, such as Wikipedia and Example.com, load directly. Any site not on that list is attempted; if nothing paints within six seconds, a dismissible notice appears. There is no way to render a frame-blocking site (or a signed-in Instagram session) from a static GitHub Pages site, and the app never asks for Instagram credentials.
+
+The keypad is a casual screen lock, not secure authentication. Static source, passcode hashes, and behavior are available to visitors; four-digit codes can be discovered. The in-app browser does not hide activity from the device's own browser history. OS lock events and screenshots vary by phone, so test the installed app on your own phone. Use the visible lock button before handing the device to someone else.
 
 ## Publish on GitHub Pages
 

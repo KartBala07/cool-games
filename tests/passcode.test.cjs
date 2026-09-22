@@ -38,15 +38,22 @@ function setup(crypto = webcrypto) {
   });
   const location = { protocol: 'https:', href: 'https://example.test/cool-games/' };
   const window = Object.assign(element(), { location, scrollTo() {} });
+  const store = new Map();
   const context = vm.createContext({
-    document, window, location, crypto, TextEncoder, Uint8Array, navigator: {},
-    localStorage: { getItem() { return null; }, setItem() {} },
+    document, window, location, crypto, TextEncoder, Uint8Array, navigator: {}, URL,
+    localStorage: {
+      getItem: key => (store.has(key) ? store.get(key) : null),
+      setItem: (key, value) => store.set(key, String(value)),
+    },
     setInterval() {}, clearInterval() {}, setTimeout() {}, clearTimeout() {},
     cancelAnimationFrame() {}, requestAnimationFrame() {},
   });
   vm.runInContext(source, context);
-  return { get, document, window, context, enter: code => vm.runInContext(
-    `(async () => { for (const d of ${JSON.stringify(code)}) await digit(d); })()`, context),
+  return {
+    get, document, window, context, store,
+    run: expression => vm.runInContext(expression, context),
+    enter: code => vm.runInContext(
+      `(async () => { for (const d of ${JSON.stringify(code)}) await digit(d); })()`, context),
   };
 }
 
@@ -76,11 +83,33 @@ test('web passcode opens the in-app viewer without unlocking games or navigating
 
 test('the viewer turns typed text into a URL or a search', () => {
   const app = setup();
-  const run = expression => vm.runInContext(expression, app.context);
-  assert.equal(run('toWebUrl("instagram.com")'), 'https://instagram.com');
-  assert.equal(run('toWebUrl("https://x.com/a?b=1")'), 'https://x.com/a?b=1');
-  assert.equal(run('toWebUrl("best pizza")'), 'https://duckduckgo.com/?q=best%20pizza');
-  assert.equal(run('toWebUrl("")'), '');
+  assert.equal(app.run('toWebUrl("instagram.com")'), 'https://instagram.com');
+  assert.equal(app.run('toWebUrl("https://x.com/a?b=1")'), 'https://x.com/a?b=1');
+  assert.equal(app.run('toWebUrl("best pizza")'), 'https://duckduckgo.com/?q=best%20pizza');
+  assert.equal(app.run('toWebUrl("")'), '');
+});
+
+test('the viewer remembers visits and deletes them from history', async () => {
+  const app = setup();
+  await app.enter('1857');
+  assert.deepEqual(app.run('JSON.parse(localStorage.getItem("cool-games-web-history")).map(e => e.host)'), ['instagram.com']);
+  app.run('openWeb("wikipedia.org")');
+  assert.deepEqual(app.run('JSON.parse(localStorage.getItem("cool-games-web-history")).map(e => e.host)'), ['wikipedia.org', 'instagram.com']);
+  app.run('webDelete("https://wikipedia.org")');
+  assert.deepEqual(app.run('JSON.parse(localStorage.getItem("cool-games-web-history")).map(e => e.host)'), ['instagram.com']);
+  app.run('webClearHistory()');
+  assert.deepEqual(app.run('JSON.parse(localStorage.getItem("cool-games-web-history"))'), []);
+});
+
+test('the viewer keeps bookmarks and can remove them', async () => {
+  const app = setup();
+  await app.enter('1857');
+  assert.equal(app.run('webBookmarked("https://www.instagram.com")'), false);
+  app.run('webToggleBookmark()');
+  assert.equal(app.run('webBookmarked("https://www.instagram.com")'), true);
+  assert.deepEqual(app.run('JSON.parse(localStorage.getItem("cool-games-web-bookmarks")).map(e => e.host)'), ['instagram.com']);
+  app.run('webToggleBookmark()');
+  assert.deepEqual(app.run('JSON.parse(localStorage.getItem("cool-games-web-bookmarks"))'), []);
 });
 
 test('wrong code stays locked and allows a successful retry', async () => {
