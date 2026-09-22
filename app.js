@@ -40,10 +40,12 @@ async function digit(d){
 }
 const GAME_PIN_HASH='9589262630f775d921bef5b9b2d36fa40f91afebeab887deefc721ff3c787b2c';
 const WEB_PIN_HASH='255afccc8af662895c98741bca9fb9213750b070d1c945061edf6bb6270b6a74';
-const WEB_HISTORY_KEY='cool-games-web-history',WEB_BOOKMARK_KEY='cool-games-web-bookmarks';
+const WEB_HISTORY_KEY='cool-games-web-history',WEB_BOOKMARK_KEY='cool-games-web-bookmarks',INSTAGRAM_USER_KEY='cool-games-instagram-user';
 const WEB_BLOCKERS=['instagram.com','facebook.com','google.com','youtube.com','x.com','twitter.com','tiktok.com','reddit.com','linkedin.com','discord.com','whatsapp.com','duckduckgo.com','bing.com','yahoo.com'];
+const INSTAGRAM_SKIP=['p','reel','tv','explore','accounts','direct','stories','reels'];
 function toWebUrl(value){const raw=String(value||'').trim();if(!raw)return '';if(/^https?:\/\//i.test(raw))return raw;if(/^[\w-]+(\.[\w-]+)+(:\d+)?(\/\S*)?$/.test(raw))return 'https://'+raw;return 'https://duckduckgo.com/?q='+encodeURIComponent(raw);}
 function webHost(url){try{return new URL(url).hostname.replace(/^www\./,'');}catch{return String(url||'');}}
+function webInstagramEmbed(url){let u;try{u=new URL(url);}catch{return null;}if(webHost(url)!=='instagram.com')return null;const seg=String((u&&u.pathname)||'').split('/').filter(Boolean);if(seg.length>=2&&['p','reel','tv'].includes(seg[0]))return 'https://www.instagram.com/'+seg[0]+'/'+encodeURIComponent(seg[1])+'/embed';if(seg.length===1&&!INSTAGRAM_SKIP.includes(seg[0])){webWrite(INSTAGRAM_USER_KEY,seg[0]);return 'https://www.instagram.com/'+encodeURIComponent(seg[0])+'/embed';}return null;}
 function webRead(key,fallback){try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):fallback;}catch{return fallback;}}
 function webWrite(key,value){try{localStorage.setItem(key,JSON.stringify(value));}catch{}}
 function webClear(node){if(node.replaceChildren)node.replaceChildren();else node.textContent='';}
@@ -57,24 +59,22 @@ function webToggleBookmark(){const url=$('web-address').value;if(!url)return;con
 function webUpdateStar(){const marked=webBookmarked($('web-address').value);$('web-star').textContent=marked?'★':'☆';$('web-star').setAttribute('aria-label',marked?'Remove bookmark':'Bookmark this page');}
 function webFillList(node,entries,emptyText,onRemove){webClear(node);if(!entries.length){const p=document.createElement('p');p.className='web-empty';p.textContent=emptyText;node.append(p);return;}for(const entry of entries){const li=document.createElement('li');const go=document.createElement('button');go.type='button';go.className='web-entry';const host=document.createElement('strong');host.textContent=entry.host||webHost(entry.url);const detail=document.createElement('span');detail.textContent=entry.url;const when=document.createElement('em');when.textContent=webAgo(entry.ts);go.append(host,detail,when);go.addEventListener('click',()=>openWeb(entry.url));const del=document.createElement('button');del.type='button';del.className='web-delete';del.setAttribute('aria-label','Delete '+entry.url);del.textContent='✕';del.addEventListener('click',event=>{event.stopPropagation();onRemove(entry.url);});li.append(go,del);node.append(li);}}
 function webRenderStart(){const history=webRead(WEB_HISTORY_KEY,[]);const bookmarks=webRead(WEB_BOOKMARK_KEY,[]);$('web-history-wrap').hidden=!history.length;$('web-bookmarks-wrap').hidden=!bookmarks.length;webFillList($('web-history-list'),history,'No sites visited yet.',webDelete);webFillList($('web-bookmark-list'),bookmarks,'No bookmarks yet.',url=>{webWrite(WEB_BOOKMARK_KEY,webRead(WEB_BOOKMARK_KEY,[]).filter(entry=>entry.url!==url));webUpdateStar();webRenderStart();});const suggestions=$('web-suggestions');webClear(suggestions);for(const entry of bookmarks.concat(history).slice(0,40)){const option=document.createElement('option');option.value=entry.url;suggestions.append(option);}}
-function showWebNotice(url){
-  if(webIsBlocked(url)){$('web-blocked-host').textContent=webHost(url)+' blocks embedding';$('web-blocked-text').textContent='This site refuses to load inside another site, so it can only open in a new tab. Your history and bookmarks stay here in Cool Games.';$('web-blocked').hidden=false;$('web-notice').hidden=true;}
-  else{$('web-notice-text').textContent='Still blank? '+webHost(url)+' may block embedding. Open it in a new tab.';$('web-notice').hidden=false;}
-}
+function showWebNotice(url){$('web-notice-text').textContent='Still blank? '+webHost(url)+' may block embedding. Open it in a new tab.';$('web-notice').hidden=false;}
+function showWebBlocked(url){$('web-blocked-kicker').textContent="CAN'T EMBED THIS SITE";$('web-blocked-host').textContent=webHost(url)+' blocks embedding';$('web-blocked-text').textContent='This site refuses to load inside another site, so it can only open in a new tab. Your history and bookmarks stay here in Cool Games.';$('web-instagram-form').hidden=true;$('web-blocked').hidden=false;$('web-notice').hidden=true;}
+function showInstagramPrompt(){$('web-blocked-kicker').textContent='INSTAGRAM MINI APP';$('web-blocked-host').textContent='Show a profile here';$('web-blocked-text').textContent="Instagram's full app can't run inside another site, but a public profile can. Enter a username to load it in this mini app view.";$('web-instagram-form').hidden=false;$('web-blocked').hidden=false;$('web-notice').hidden=true;}
 function updateWebButtons(){$('web-back-page').disabled=webIndex<=0;$('web-forward-page').disabled=webIndex>=webStack.length-1;}
 function openWeb(value,remember=true){
   const url=toWebUrl(value);if(!url)return;
   if(remember){webStack=webStack.slice(0,webIndex+1);webStack.push(url);webIndex=webStack.length-1;}
   webRemember(url);
   $('web-address').value=url;$('web-start-page').hidden=true;$('web-notice').hidden=true;$('web-blocked').hidden=true;$('web-loading').hidden=false;
-  const f=$('web-frame');clearTimeout(webTimer);f.onload=null;
-  if(webIsBlocked(url)){f.hidden=true;f.src='about:blank';$('web-loading').hidden=true;showWebNotice(url);}
-  else{
-    f.hidden=false;
-    f.onload=()=>{clearTimeout(webTimer);$('web-loading').hidden=true;};
-    webTimer=setTimeout(()=>{$('web-loading').hidden=true;if(!f.hidden)showWebNotice(url);},6000);
-    try{f.src=url;}catch{showWebNotice(url);}
-  }
+  const f=$('web-frame');clearTimeout(webTimer);f.onload=null;f.classList.remove('web-frame-phone');
+  let loadUrl=webInstagramEmbed(url),phone=!!loadUrl,hint='';
+  let parsed=null;try{parsed=new URL(url);}catch{}
+  if(!loadUrl&&webHost(url)==='instagram.com'&&parsed&&(parsed.pathname||'/')==='/'){const user=webRead(INSTAGRAM_USER_KEY,'');loadUrl='https://www.instagram.com/'+(user||'instagram')+'/embed';phone=true;if(!user)hint='Showing @instagram. Type your username in the address bar to see your own profile.';}
+  if(phone){f.hidden=false;f.classList.add('web-frame-phone');$('web-loading').hidden=true;f.onload=()=>{clearTimeout(webTimer);$('web-loading').hidden=true;};try{f.src=loadUrl;}catch{}if(hint){$('web-notice-text').textContent=hint;$('web-notice').hidden=false;}}
+  else if(webIsBlocked(url)){f.hidden=true;f.src='about:blank';$('web-loading').hidden=true;if(webHost(url)==='instagram.com')showInstagramPrompt();else showWebBlocked(url);}
+  else{f.hidden=false;f.onload=()=>{clearTimeout(webTimer);$('web-loading').hidden=true;};webTimer=setTimeout(()=>{$('web-loading').hidden=true;if(!f.hidden)showWebNotice(url);},6000);try{f.src=url;}catch{showWebNotice(url);}}
   webUpdateStar();updateWebButtons();webRenderStart();
 }
 function webGo(delta){const next=webIndex+delta;if(next<0||next>=webStack.length)return;webIndex=next;openWeb(webStack[webIndex],false);}
@@ -84,6 +84,7 @@ $('web-form').addEventListener('submit',event=>{event.preventDefault();openWeb($
 $('web-back-page').onclick=()=>webGo(-1);$('web-forward-page').onclick=()=>webGo(1);
 $('web-start').onclick=webStart;$('web-reload').onclick=()=>{if($('web-address').value)openWeb($('web-address').value,false);else webStart();};
 $('web-star').onclick=webToggleBookmark;$('web-clear-history').onclick=webClearHistory;$('web-notice-close').onclick=()=>{$('web-notice').hidden=true;};
+$('web-instagram-form').addEventListener('submit',event=>{event.preventDefault();const user=$('web-instagram-user').value.trim().replace(/^@+/,'');if(user)openWeb('https://www.instagram.com/'+encodeURIComponent(user));});
 document.querySelectorAll('[data-web-open]').forEach(button=>button.addEventListener('click',event=>{event.preventDefault();webOpenTab();}));
 document.querySelectorAll('[data-web-url]').forEach(button=>button.addEventListener('click',event=>{event.preventDefault();openWeb(button.dataset.webUrl);}));
 $('keypad').addEventListener('click',e=>{const b=e.target.closest('[data-digit]');if(b)digit(b.dataset.digit);});

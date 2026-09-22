@@ -75,7 +75,7 @@ test('web passcode opens the in-app viewer without unlocking games or navigating
   assert.equal(app.get('arcade').hidden, true);
   assert.equal(app.get('web-screen').hidden, false);
   assert.equal(app.get('web-address').value, 'https://www.instagram.com');
-  assert.equal(app.get('web-frame').src, 'https://www.instagram.com');
+  assert.equal(app.get('web-frame').src, 'https://www.instagram.com/instagram/embed');
   app.get('web-back').click();
   assert.equal(app.get('web-screen').hidden, true);
   assert.equal(app.get('lock-screen').hidden, false);
@@ -87,6 +87,25 @@ test('the viewer turns typed text into a URL or a search', () => {
   assert.equal(app.run('toWebUrl("https://x.com/a?b=1")'), 'https://x.com/a?b=1');
   assert.equal(app.run('toWebUrl("best pizza")'), 'https://duckduckgo.com/?q=best%20pizza');
   assert.equal(app.run('toWebUrl("")'), '');
+});
+
+test('Instagram URLs load as an in-page mini app instead of a new tab', async () => {
+  const app = setup();
+  await app.enter('1857');
+  assert.equal(app.get('web-frame').src, 'https://www.instagram.com/instagram/embed');
+  assert.equal(app.get('web-blocked').hidden, true);
+  app.run('openWeb("instagram.com/kartbala07")');
+  assert.equal(app.get('web-address').value, 'https://instagram.com/kartbala07');
+  assert.equal(app.get('web-frame').src, 'https://www.instagram.com/kartbala07/embed');
+  assert.equal(app.get('web-blocked').hidden, true);
+  app.run('openWeb("https://www.instagram.com")');
+  assert.equal(app.get('web-frame').src, 'https://www.instagram.com/kartbala07/embed');
+  app.run('openWeb("https://www.instagram.com/p/ABC123/")');
+  assert.equal(app.get('web-frame').src, 'https://www.instagram.com/p/ABC123/embed');
+  app.run('openWeb("https://www.instagram.com/explore/")');
+  assert.equal(app.get('web-frame').hidden, true);
+  assert.equal(app.get('web-blocked').hidden, false);
+  assert.equal(app.get('web-instagram-form').hidden, false);
 });
 
 test('the viewer remembers visits and deletes them from history', async () => {

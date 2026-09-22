@@ -24,7 +24,20 @@ The second code, **1857**, opens an in-site browser instead of leaving the arcad
 
 History and bookmarks are kept in `localStorage` only (`cool-games-web-history`, `cool-games-web-bookmarks`); nothing is sent anywhere. The frame is cleared on relock.
 
-Some hosts — Instagram, Facebook, Google, YouTube, X, TikTok, Reddit, LinkedIn, Discord, WhatsApp — send `X-Frame-Options: DENY` or `frame-ancestors`, so browsers refuse to render them inside another site. For those the viewer skips the embed and shows a clean in-app notice with an **Open ↗** button, avoiding the browser's raw “refused to connect” page. Sites that permit embedding, such as Wikipedia and Example.com, load directly. Any site not on that list is attempted; if nothing paints within six seconds, a dismissible notice appears. There is no way to render a frame-blocking site (or a signed-in Instagram session) from a static GitHub Pages site, and the app never asks for Instagram credentials.
+### Instagram mini app
+
+Instagram's normal site sends `X-Frame-Options: DENY`, so `instagram.com` itself cannot be embedded. Its **embed endpoints can**: `https://www.instagram.com/<user>/embed` and `https://www.instagram.com/p/<code>/embed` return `200` with no frame-blocking header. The viewer rewrites Instagram URLs to those endpoints and renders them in a phone-width pane, so a public profile or single post appears inside Cool Games instead of a new tab:
+
+- `instagram.com/<user>` and `instagram.com/<user>/` load that profile's embed (and remember the username).
+- `instagram.com/p/<code>`, `/reel/<code>`, `/tv/<code>` load that post's embed.
+- Bare `instagram.com` loads the remembered username, or the official `@instagram` profile the first time, with a hint to type your own username.
+- Login-walled paths (`/explore`, `/accounts`, `/direct`, `/stories`, `/reels`) have no embed; those show a username prompt plus an **Open the full site** button.
+
+Only public profiles/posts render; a signed-in feed, DMs, and the logged-in app cannot be embedded from a static site, and the app never asks for Instagram credentials.
+
+### Frame-blocking hosts
+
+Other hosts — Facebook, Google, YouTube, X, TikTok, Reddit, LinkedIn, Discord, WhatsApp — send `X-Frame-Options: DENY` or `frame-ancestors`, so browsers refuse to render them inside another site. For those the viewer skips the embed and shows a clean in-app notice with an **Open the full site** button, avoiding the browser's raw “refused to connect” page. Sites that permit embedding, such as Wikipedia and Example.com, load directly. Any site not on that list is attempted; if nothing paints within six seconds, a dismissible notice appears.
 
 The keypad is a casual screen lock, not secure authentication. Static source, passcode hashes, and behavior are available to visitors; four-digit codes can be discovered. The in-app browser does not hide activity from the device's own browser history. OS lock events and screenshots vary by phone, so test the installed app on your own phone. Use the visible lock button before handing the device to someone else.
 

@@ -91,14 +91,19 @@
         <button id="web-notice-close" class="web-delete" type="button" aria-label="Dismiss">✕</button>
       </div>
       <div id="web-blocked" class="web-blocked" hidden>
-        <span class="eyebrow">CAN'T EMBED THIS SITE</span>
+        <span class="eyebrow" id="web-blocked-kicker">CAN'T EMBED THIS SITE</span>
         <h2 id="web-blocked-host"></h2>
         <p id="web-blocked-text"></p>
-        <button class="primary" type="button" data-web-open>Open in a new tab</button>
+        <form id="web-instagram-form" class="web-inline-form" hidden>
+          <span class="web-at" aria-hidden="true">@</span>
+          <input id="web-instagram-user" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="Instagram username" placeholder="username">
+          <button type="submit" class="primary">View</button>
+        </form>
+        <button class="primary" type="button" data-web-open>Open the full site</button>
       </div>
       <div id="web-start-page" class="web-start-page">
         <h1 id="web-title">Browse without leaving.</h1>
-        <p class="web-note">Type an address or search above. Sites that allow embedding load right here; sites that block embedding (like Instagram) open with one tap.</p>
+        <p class="web-note">Type an address or search above. Instagram profiles and posts open in a mini app view right here; other sites load in the pane when they allow it.</p>
         <div class="web-tiles">
           <button type="button" data-web-url="https://www.instagram.com"><strong>Instagram</strong><span>instagram.com</span></button>
           <button type="button" data-web-url="https://en.m.wikipedia.org"><strong>Wikipedia</strong><span>en.m.wikipedia.org</span></button>
