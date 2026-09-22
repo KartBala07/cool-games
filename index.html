@@ -56,12 +56,40 @@
     </section>
   </main>
 
-  <section id="unavailable-screen" class="unavailable" hidden>
-    <img src="./icons/icon.svg" width="52" height="52" alt="">
-    <h1>This connection isn’t available.</h1>
-    <p>Instagram’s signed-in mobile website cannot run inside this web app. Your Instagram account cannot be connected here.</p>
-    <p>You’re still in Cool Games.</p>
-    <button id="unavailable-back" class="primary">Back to passcode</button>
+  <section id="web-screen" class="web-screen" aria-labelledby="web-title" hidden>
+    <header class="web-bar">
+      <button id="web-back" class="text-button">← Passcode</button>
+      <form id="web-form" class="web-form">
+        <input id="web-address" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Web address or search" placeholder="Address or search">
+        <button type="submit" class="primary web-go">Go</button>
+      </form>
+      <div class="web-tools">
+        <button id="web-reload" class="icon-button" aria-label="Reload page">⟳</button>
+        <button id="web-open-tab" class="icon-button" aria-label="Open in a new tab" data-web-open>↗</button>
+      </div>
+    </header>
+    <div class="web-nav">
+      <button id="web-back-page" class="text-button">◀ Back</button>
+      <button id="web-forward-page" class="text-button">Forward ▶</button>
+      <button id="web-home" class="text-button">⌂ Start</button>
+    </div>
+    <p class="web-hint">Many sites (Instagram, Google, YouTube) refuse to load inside another site. If the area below stays blank or shows an error, tap <strong>↗</strong> to open it in a new tab.</p>
+    <div class="web-stage">
+      <iframe id="web-frame" class="web-frame" title="Web viewer" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-downloads" hidden></iframe>
+      <p id="web-loading" class="web-loading" hidden>Loading…</p>
+      <div id="web-fallback" class="web-fallback">
+        <span class="eyebrow">IN-APP WEB VIEWER</span>
+        <h1 id="web-title">Browse without leaving.</h1>
+        <p id="web-url" class="web-url"></p>
+        <p class="web-note">Type an address above, or search. Pages that allow embedding appear here; the rest open in a new tab.</p>
+        <button class="primary" data-web-open>Open in a new tab</button>
+        <div class="web-links">
+          <button data-web-url="https://www.instagram.com">Instagram</button>
+          <button data-web-url="https://en.m.wikipedia.org">Wikipedia</button>
+          <button data-web-url="https://example.com">Example.com</button>
+        </div>
+      </div>
+    </div>
   </section>
 
   <dialog id="install-dialog"><button class="dialog-close" id="close-install" aria-label="Close install instructions">×</button><span class="eyebrow">TAKE THE ARCADE WITH YOU</span><h2>On your home screen.</h2><p><strong>iPhone:</strong> Open this site in Safari, tap Share, then Add to Home Screen. Enable Open as Web App if shown.</p><p><strong>Android:</strong> Open in Chrome, tap the menu, then Install app or Add to Home screen.</p><p class="muted">Once loaded online, all six games can work offline. Your passcode is required each time you return.</p></dialog>

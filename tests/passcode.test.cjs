@@ -41,7 +41,8 @@ function setup(crypto = webcrypto) {
   const context = vm.createContext({
     document, window, location, crypto, TextEncoder, Uint8Array, navigator: {},
     localStorage: { getItem() { return null; }, setItem() {} },
-    setInterval() {}, cancelAnimationFrame() {}, requestAnimationFrame() {},
+    setInterval() {}, clearInterval() {}, setTimeout() {}, clearTimeout() {},
+    cancelAnimationFrame() {}, requestAnimationFrame() {},
   });
   vm.runInContext(source, context);
   return { get, document, window, context, enter: code => vm.runInContext(
@@ -60,11 +61,26 @@ test('startup succeeds and the games passcode opens all six games', async () => 
   assert.equal(app.get('start-button').textContent, "Let's play");
 });
 
-test('Instagram passcode navigates to Instagram without unlocking games', async () => {
+test('web passcode opens the in-app viewer without unlocking games or navigating away', async () => {
   const app = setup();
   await app.enter('1857');
-  assert.equal(app.window.location.href, 'https://www.instagram.com');
+  assert.equal(app.window.location.href, 'https://example.test/cool-games/');
   assert.equal(app.get('arcade').hidden, true);
+  assert.equal(app.get('web-screen').hidden, false);
+  assert.equal(app.get('web-address').value, 'https://www.instagram.com');
+  assert.equal(app.get('web-frame').src, 'https://www.instagram.com');
+  app.get('web-back').click();
+  assert.equal(app.get('web-screen').hidden, true);
+  assert.equal(app.get('lock-screen').hidden, false);
+});
+
+test('the viewer turns typed text into a URL or a search', () => {
+  const app = setup();
+  const run = expression => vm.runInContext(expression, app.context);
+  assert.equal(run('toWebUrl("instagram.com")'), 'https://instagram.com');
+  assert.equal(run('toWebUrl("https://x.com/a?b=1")'), 'https://x.com/a?b=1');
+  assert.equal(run('toWebUrl("best pizza")'), 'https://duckduckgo.com/?q=best%20pizza');
+  assert.equal(run('toWebUrl("")'), '');
 });
 
 test('wrong code stays locked and allows a successful retry', async () => {

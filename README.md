@@ -11,13 +11,13 @@ A mobile-first, offline-capable arcade with six original Canvas games: Neon Drif
 - Immediate return to the passcode screen on `visibilitychange` to hidden, `blur`, `pagehide`, `pageshow`, and `freeze`. Unlock state is kept only in memory. A timer-gap check also relocks after a suspension that did not deliver a lifecycle event.
 - Relative URLs support a GitHub Pages project URL such as `/cool-games/`.
 
-## Instagram shortcut
+## In-app web viewer
 
-The second code, **1857**, opens `https://www.instagram.com` in the current window. Returning to the arcade shows the passcode screen again.
+The second code, **1857**, opens an in-site web viewer instead of leaving the arcade. It starts at `https://www.instagram.com`. The viewer has an address bar (type a domain like `wikipedia.org` or any text to search), back/forward history, reload, a start page with quick links, and an **↗** button that opens the current page in a real new tab. Anything you do in the viewer stays inside Cool Games; nothing is stored or sent anywhere by the app.
 
-A GitHub Pages site cannot embed Instagram's full signed-in mobile website, import its login cookies, or control Instagram after navigating away. The shortcut opens Instagram itself; it does not embed a feed or connect an account to this arcade.
+Many sites — including Instagram, Google, YouTube, and Facebook — send `X-Frame-Options: DENY` or a `frame-ancestors` policy that browsers enforce, so they cannot be rendered inside another site. The viewer detects a blocked frame (or a six-second timeout) and shows a fallback with the address and an **Open in a new tab** button. Sites that permit embedding, such as Wikipedia, render directly in the pane. There is no way to bypass this from a static GitHub Pages site, and the app never asks for Instagram credentials.
 
-The keypad is a casual screen lock, not secure authentication. Static source, passcode hashes, and behavior are available to visitors; four-digit codes can be discovered. Nothing here hides browsing history or guarantees that a phone's app-switcher screenshot will be obscured. OS lock events and screenshots vary by phone, so test the installed app on your own phone. Use the visible lock button before handing the device to someone else. No Instagram credentials are requested or stored.
+The keypad is a casual screen lock, not secure authentication. Static source, passcode hashes, and behavior are available to visitors; four-digit codes can be discovered. Nothing here hides browsing history or guarantees that a phone's app-switcher screenshot will be obscured. The in-app viewer does not hide activity from the device's own browser history. OS lock events and screenshots vary by phone, so test the installed app on your own phone. Use the visible lock button before handing the device to someone else. The web viewer locks and clears its frame whenever the arcade relocks.
 
 ## Publish on GitHub Pages
 

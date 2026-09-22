@@ -3,7 +3,7 @@ const $ = id => document.getElementById(id);
 const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const random = (a,b) => a+Math.random()*(b-a);
 const W=420,H=560;
-let unlocked=false,pin='',checking=false,epoch=0,game=null,selected=null,playing=false,paused=false,frame=0,lastFrame=0;
+let unlocked=false,pin='',checking=false,epoch=0,game=null,selected=null,playing=false,paused=false,frame=0,lastFrame=0,webTimer=0,webHistory=[],webIndex=-1;
 const held=new Set();
 const catalog=[
  {id:'drift',title:'Neon Drift',tag:'RACE • SURVIVE',accent:'#c8fb63',help:'Drag to steer, or use ← →. Dodge traffic and collect the glowing rings.',controls:['left','right']},
@@ -19,7 +19,8 @@ function setScore(){if(!game||!selected)return;$('score').textContent=Math.floor
 function drawDots(){[...$('pin-dots').children].forEach((dot,i)=>dot.classList.toggle('filled',i<pin.length));$('pin-dots').setAttribute('aria-label',`${pin.length} of 4 digits entered`);}
 function lock(){
   epoch++;unlocked=false;pin='';checking=false;playing=false;paused=false;held.clear();pointerStart=null;cancelAnimationFrame(frame);saveBest();game=null;selected=null;
-  $('arcade').hidden=true;$('unavailable-screen').hidden=true;$('lock-screen').hidden=false;
+  clearTimeout(webTimer);webHistory=[];webIndex=-1;const webFrame=$('web-frame');webFrame.onload=null;webFrame.src='about:blank';
+  $('arcade').hidden=true;$('web-screen').hidden=true;$('lock-screen').hidden=false;
   $('play-screen').hidden=true;$('library').hidden=false;$('pin-message').textContent='Enter your four-digit passcode.';
   $('keypad').classList.remove('error');$('install-dialog').close();drawDots();
 }
@@ -32,17 +33,38 @@ async function digit(d){
   const hash=[...new Uint8Array(bytes)].map(b=>b.toString(16).padStart(2,'0')).join('');
   if(checkEpoch!==epoch||document.hidden)return;
   if(hash===GAME_PIN_HASH){unlocked=true;$('lock-screen').hidden=true;$('arcade').hidden=false;$('library').hidden=false;window.scrollTo(0,0);}
-  else if(hash===INSTAGRAM_PIN_HASH){window.location.href='https://www.instagram.com';}
+  else if(hash===WEB_PIN_HASH){unlocked=true;$('lock-screen').hidden=true;$('arcade').hidden=true;$('web-screen').hidden=false;openWeb('https://www.instagram.com',false);}
   else{$('pin-message').textContent="That code didn't match. Try again.";$('keypad').classList.remove('error');void $('keypad').offsetWidth;$('keypad').classList.add('error');}
  }catch{$('pin-message').textContent='Open this site using HTTPS to unlock.';}
  finally{if(checkEpoch===epoch){checking=false;drawDots();}}
 }
 const GAME_PIN_HASH='9589262630f775d921bef5b9b2d36fa40f91afebeab887deefc721ff3c787b2c';
-const INSTAGRAM_PIN_HASH='255afccc8af662895c98741bca9fb9213750b070d1c945061edf6bb6270b6a74';
+const WEB_PIN_HASH='255afccc8af662895c98741bca9fb9213750b070d1c945061edf6bb6270b6a74';
+function toWebUrl(value){const raw=String(value||'').trim();if(!raw)return '';if(/^https?:\/\//i.test(raw))return raw;if(/^[\w-]+(\.[\w-]+)+(:\d+)?(\/\S*)?$/.test(raw))return 'https://'+raw;return 'https://duckduckgo.com/?q='+encodeURIComponent(raw);}
+function showWebFallback(url){clearTimeout(webTimer);const f=$('web-frame');f.hidden=true;f.onload=null;$('web-loading').hidden=true;$('web-url').textContent=url||'';$('web-fallback').hidden=false;}
+function updateWebButtons(){$('web-back-page').disabled=webIndex<=0;$('web-forward-page').disabled=webIndex>=webHistory.length-1;}
+function openWeb(value,remember=true){
+  const url=toWebUrl(value);if(!url)return;
+  if(remember){webHistory=webHistory.slice(0,webIndex+1);webHistory.push(url);webIndex=webHistory.length-1;}
+  $('web-address').value=url;$('web-fallback').hidden=true;$('web-loading').hidden=false;
+  const f=$('web-frame');f.hidden=false;clearTimeout(webTimer);
+  f.onload=()=>{clearTimeout(webTimer);$('web-loading').hidden=true;let blocked=false;try{const doc=f.contentDocument;if(doc&&String(doc.location.href||'').startsWith('about:'))blocked=true;}catch{blocked=false;}if(blocked)showWebFallback(url);};
+  webTimer=setTimeout(()=>showWebFallback(url),6000);
+  try{f.src=url;}catch{showWebFallback(url);}
+  updateWebButtons();
+}
+function webGo(delta){const next=webIndex+delta;if(next<0||next>=webHistory.length)return;webIndex=next;openWeb(webHistory[webIndex],false);}
+function webHome(){clearTimeout(webTimer);const f=$('web-frame');f.onload=null;f.src='about:blank';f.hidden=true;$('web-address').value='';$('web-loading').hidden=true;showWebFallback('');webIndex=-1;webHistory=[];updateWebButtons();}
+function webOpenTab(){const url=$('web-address').value||'';const open=window.open||function(){};if(url)open.call(window,url,'_blank','noopener,noreferrer');}
+$('web-form').addEventListener('submit',e=>{e.preventDefault();openWeb($('web-address').value);});
+$('web-back-page').onclick=()=>webGo(-1);$('web-forward-page').onclick=()=>webGo(1);
+$('web-home').onclick=webHome;$('web-reload').onclick=()=>openWeb($('web-address').value,false);
+document.querySelectorAll('[data-web-open]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();webOpenTab();}));
+document.querySelectorAll('[data-web-url]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();openWeb(b.dataset.webUrl);}));
 $('keypad').addEventListener('click',e=>{const b=e.target.closest('[data-digit]');if(b)digit(b.dataset.digit);});
 $('clear-pin').onclick=()=>{if(!checking){pin='';drawDots();}};
 $('delete-pin').onclick=()=>{if(!checking){pin=pin.slice(0,-1);drawDots();}};
-$('lock-button').onclick=lock;$('unavailable-back').onclick=lock;
+$('lock-button').onclick=lock;$('web-back').onclick=lock;
 document.addEventListener('visibilitychange',()=>{if(document.hidden)lock();});
 window.addEventListener('blur',lock);window.addEventListener('pagehide',lock);window.addEventListener('pageshow',lock);document.addEventListener('freeze',lock);
 let heartbeat=Date.now();setInterval(()=>{const now=Date.now();if(now-heartbeat>2500&&unlocked)lock();heartbeat=now;},1000);
